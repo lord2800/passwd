@@ -4,7 +4,6 @@
         <title>Password Hasher</title>
         <meta http-equiv="content-type" content="text-html; charset=utf-8">
         <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
-        <script src="/passhash.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.29/angular.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/1.1.1/ui-bootstrap-tpls.js"></script>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
@@ -17,75 +16,9 @@
             }
             #header { font-size: 29px; font-family: 'Fauna One'; }
         </style>
-        <script>
-            angular.module('passhash', ['ui.bootstrap'])
-                .controller('passhash', function ($scope, $document) {
-                    $scope.savedName = '';
-                    $scope.savedKeys = Object.keys(localStorage);
-
-                    this.load = function (key) {
-                        $scope.gen = JSON.parse(localStorage.getItem(key));
-                    };
-                    this.save = function (key, value) {
-                        localStorage.setItem(key, JSON.stringify(value));
-                        $scope.savedKeys = Object.keys(localStorage);
-                    };
-                    this.remove = function (key) {
-                        localStorage.removeItem(key);
-                        $scope.savedKeys = Object.keys(localStorage);
-                        $scope.savedName = '';
-                    };
-                    this.clear = function () {
-                        localStorage.clear();
-                        $scope.savedKeys = [];
-                        $scope.savedName = '';
-                    };
-
-                    this.hash = function () {
-                        $scope.hash = PassHashCommon.generateHashWord(
-                            $scope.gen.tag + ($scope.gen.version > 0 ? ':' + $scope.gen.version : ''),
-                            $scope.gen.masterKey,
-                            $scope.gen.size,
-                            $scope.gen.digit,
-                            $scope.gen.punctuation,
-                            $scope.gen.mixedCase,
-                            $scope.gen.restrictSpecial,
-                            $scope.gen.restrictDigits
-                        );
-                    };
-
-                    this.reset = function () {
-                        $scope.savedName = '';
-                        $scope.hash = '';
-                        $scope.gen = {
-                            tag: '',
-                            version: 0,
-                            masterKey: '',
-                            size: 16,
-                            digit: true,
-                            punctuation: true,
-                            mixedCase: true,
-                            restrictSpecial: false,
-                            restrictDigits: false
-                        };
-                    };
-                    this.bump = function (amount) { $scope.gen.version = Math.max($scope.gen.version + amount, 0); };
-                    this.copy = function () {
-                        if(angular.isDefined(window.cordova)) {
-                            console.log('Using cordova device api to copy passhash');
-                            window.cordova.plugins.clipboard.copy($scope.hash);
-                        } else {
-                            console.log('Selecting hash instead.');
-                            $document[0].getElementById('hash').select();
-                        }
-                    };
-                    this.reset();
-                })
-            ;
-        </script>
     </head>
 
-    <body ng-controller="passhash as passhash" class="container-fluid">
+    <body ng-app="passhash" ng-controller="passhash as passhash" class="container-fluid">
         <h1 id="header">Password Generator</h1>
         <form class="row" novalidate role="form" name="hashForm">
             <div class="form-group col-md-12" ng-class="{'has-error': hashForm.siteTag.$error && !hashForm.siteTag.$pristine}">
@@ -150,15 +83,6 @@
         </form>
     </body>
 
-    <script>
-        function ready() {
-            angular.element(document).ready(function () { angular.bootstrap(document.body, ['passhash']); });
-        }
-
-        if(angular.isDefined(window.cordova)) {
-            document.addEventListener('deviceready', ready, false);
-        } else {
-            ready();
-        }
-    </script>
+    <script src="/passhash.js"></script>
+    <script src="/module.js"></script>
 </html>
