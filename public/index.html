@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Password Hasher</title>
+        <meta http-equiv="content-type" content="text-html; charset=utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+        <script src="/passhash.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.29/angular.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/1.1.1/ui-bootstrap-tpls.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
+        <style>
+            @font-face {
+                font-family: 'Fauna One';
+                font-style: normal;
+                font-weight: 400;
+                src: local('Fauna One'), local('FaunaOne-Regular'), url(FaunaOne.woff) format('woff');
+            }
+            #header { font-size: 29px; font-family: 'Fauna One'; }
+        </style>
+        <script>
+            angular.module('passhash', ['ui.bootstrap'])
+                .controller('passhash', function ($scope, $document) {
+                    $scope.savedName = '';
+                    $scope.savedKeys = Object.keys(localStorage);
+
+                    this.load = function (key) {
+                        $scope.gen = JSON.parse(localStorage.getItem(key));
+                    };
+                    this.save = function (key, value) {
+                        localStorage.setItem(key, JSON.stringify(value));
+                        $scope.savedKeys = Object.keys(localStorage);
+                    };
+                    this.remove = function (key) {
+                        localStorage.removeItem(key);
+                        $scope.savedKeys = Object.keys(localStorage);
+                        $scope.savedName = '';
+                    };
+                    this.clear = function () {
+                        localStorage.clear();
+                        $scope.savedKeys = [];
+                        $scope.savedName = '';
+                    };
+
+                    this.hash = function () {
+                        $scope.hash = PassHashCommon.generateHashWord(
+                            $scope.gen.tag + ($scope.gen.version > 0 ? ':' + $scope.gen.version : ''),
+                            $scope.gen.masterKey,
+                            $scope.gen.size,
+                            $scope.gen.digit,
+                            $scope.gen.punctuation,
+                            $scope.gen.mixedCase,
+                            $scope.gen.restrictSpecial,
+                            $scope.gen.restrictDigits
+                        );
+                    };
+
+                    this.reset = function () {
+                        $scope.savedName = '';
+                        $scope.hash = '';
+                        $scope.gen = {
+                            tag: '',
+                            version: 0,
+                            masterKey: '',
+                            size: 16,
+                            digit: true,
+                            punctuation: true,
+                            mixedCase: true,
+                            restrictSpecial: false,
+                            restrictDigits: false
+                        };
+                    };
+                    this.bump = function (amount) { $scope.gen.version = Math.max($scope.gen.version + amount, 0); };
+                    this.copy = function () {
+                        if(angular.isDefined(window.cordova)) {
+                            console.log('Using cordova device api to copy passhash');
+                            window.cordova.plugins.clipboard.copy($scope.hash);
+                        } else {
+                            console.log('Selecting hash instead.');
+                            $document[0].getElementById('hash').select();
+                        }
+                    };
+                    this.reset();
+                })
+            ;
+        </script>
+    </head>
+
+    <body ng-controller="passhash as passhash" class="container-fluid">
+        <h1 id="header">Password Generator</h1>
+        <form class="row" novalidate role="form" name="hashForm">
+            <div class="form-group col-md-12" ng-class="{'has-error': hashForm.siteTag.$error && !hashForm.siteTag.$pristine}">
+                <label for="siteTag">Tag</label>
+                <input class="form-control" type="text" name="siteTag" required ng-model="gen.tag" />
+            </div>
+            <div class="form-group col-md-12">
+                <label for="siteVersion">Version</label>
+                <div class="input-group">
+                    <input class="form-control" type="text" required disabled name="siteVersion" ng-model="gen.version" />
+                    <span class="input-group-btn">
+                        <button class="btn" type="button" ng-click="passhash.bump(1)"><i class="glyphicon glyphicon-chevron-up"></i></button>
+                        <button class="btn" type="button" ng-click="passhash.bump(-1)"><i class="glyphicon glyphicon-chevron-down"></i></button>
+                    </span>
+                </div>
+            </div>
+            <div class="form-group col-md-12" ng-class="{'has-error': hashForm.masterKey.$error && !hashForm.masterKey.$pristine}">
+                <label for="masterKey">Master Key</label>
+                <input class="form-control" type="password" name="masterKey" required ng-model="gen.masterKey" />
+            </div>
+            <div class="form-group col-md-12">
+                <label for="hash">Hash</label>
+                <input class="form-control" type="text" id="hash" readonly name="hash" ng-model="hash" />
+            </div>
+            <div class="form-group col-md-12">
+                <button class="btn btn-primary" type="button" ng-click="passhash.hash()" ng-disabled="!hashForm.siteTag.$valid || !hashForm.masterKey.$valid">Hash</button>
+                <button class="btn btn-danger"  type="button" ng-click="passhash.reset()">Reset</button>
+                <button class="btn btn-default" type="button" ng-click="passhash.copy()" ng-disabled="hash === ''">Copy</button>
+            </div>
+            <div class="form-group col-md-12">
+                <accordion collapse-others="false">
+                    <accordion-group heading="Advanced">
+                        <label for="hashSize">Hash Size</label>
+                        <select class="form-control" ng-options="size for size in [8, 12, 14, 16, 20, 24, 28, 32]" ng-model="gen.size"></select>
+
+                        <div class="checkbox">
+                            <label><input type="checkbox" name="digit" ng-model="gen.digit" /> Require Digits</label>
+                        </div>
+                        <div class="checkbox">
+                            <label><input type="checkbox" name="punctuation" ng-model="gen.punctuation" /> Require Punctuation</div>
+                        </label>
+                        <div class="checkbox">
+                            <label><input type="checkbox" name="mixedCase" ng-model="gen.mixedCase" /> Require Mixed Case</label>
+                        </div>
+
+                        <div class="checkbox">
+                            <label><input type="checkbox" name="restrictDigits" ng-model="gen.restrictDigits" /> Digits Only</label>
+                        </div>
+                        <div class="checkbox">
+                            <label><input type="checkbox" name="restrictSpecial" ng-model="gen.restrictSpecial" /> Restrict Special Chars</label>
+                        </div>
+                        <div class="form-group">
+                            <select class="form-control" ng-options="name for name in savedKeys" ng-model="savedName" ng-change="passhash.load(savedName)"></select>
+                            <input class="form-control" type="text" name="savedName" ng-model="savedName" />
+                            <button class="btn btn-info" type="button" ng-click="passhash.save(savedName, gen)">Save</button>
+                            <button class="btn btn-info" type="button" ng-click="passhash.remove(savedName)">Remove</button>
+                            <button class="btn btn-info" type="button" ng-click="passhash.clear()">Clear All</button>
+                        </div>
+                    </accordion-group>
+                </accordion>
+            </div>
+        </form>
+    </body>
+
+    <script>
+        function ready() {
+            angular.element(document).ready(function () { angular.bootstrap(document.body, ['passhash']); });
+        }
+
+        if(angular.isDefined(window.cordova)) {
+            document.addEventListener('deviceready', ready, false);
+        } else {
+            ready();
+        }
+    </script>
+</html>

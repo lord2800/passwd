@@ -1,0 +1,19 @@
+{
+  "name": "passwd",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "clean": "rm -rf bower_components node_modules"
+  },
+  "repository": {
+    "type": "git",
+    "url": "dokku@ssh.jhdev.co:passwd"
+  },
+  "author": "Jeff Hubbard <lord2800@gmail.com> (https://github.com/lord2800)",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.13.4",
+    "morgan": "^1.6.1"
+  }
+}
